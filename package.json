@@ -1,0 +1,27 @@
+{
+  "name": "plan_z_backend",
+  "version": "1.0.0",
+  "description": "backend for my plan z budget application project.",
+  "main": "App.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/norogoth/plan_z_backend.git"
+  },
+  "keywords": [
+    "budget",
+    "finance",
+    "z"
+  ],
+  "author": "Landon Aaker",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/norogoth/plan_z_backend/issues"
+  },
+  "homepage": "https://github.com/norogoth/plan_z_backend#readme",
+  "dependencies": {
+    "node": "^15.14.0"
+  }
+}

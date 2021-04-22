@@ -16,18 +16,37 @@ let data = null;
 const username = 'user';
 const password = 'password';
 
-const client = new Client();
-await client.connect();
+const config = {
+	host: 'localhost',
+	user: username,
+	password: password,
+	port: port,
+}
 
+const client = new Client(config);
+await client.connect( err => {
+	if (err) throw err;
+	else {
+		getData();
+	}
+);
+
+function getData(sql) {
+	client
+	.query(sql)
+	.then(() => {
+		console.log('query ran.');
+		client.end();
+	})
+	.catch(err => console.log(err))
+	.then(() => {
+		console.log('finished execution.');
+		process.exit();
+	}
+}
 const res = await client.query('SELECT stuff FROM things;', (err, res) => {
 	if (err) throw err;
 	console.log(res);
 	client.end();
 });
-
-
-
-
-
-
 
