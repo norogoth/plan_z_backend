@@ -1,4 +1,5 @@
 const http = require('http');
+require('dotenv').config();
 const expwessReq = require('express');
 const expwess = expwessReq();
 const {Client} = require('pg');
@@ -14,30 +15,28 @@ expwess.listen(port, () => {
 })
 
 let data = null;
-const username = 'bismarck';
-const password = 'chongle33';
 
 const config = {
 	host: 'localhost',
-	user: username,
-	password: password,
+	user: process.env.DB_USERNAME,
+	password: process.env.DB_PASSWORD,
 	database: 'mydb',
-	port: port,
+	port: 5432,
 }
 
 const client = new Client(config);
 client.connect(err => {
 	if (err) throw err;
 	else {
-		getData();
+		getData('SELECT * FROM sample;');
 	}
 });
 
 function getData(sql) {
 	client
 	.query(sql)
-	.then(() => {
-		console.log('query ran.');
+	.then((res) => {
+		console.log('query ran. Result: ', res.rows);
 		client.end();
 	})
 	.catch(err => console.log(err))
@@ -52,4 +51,3 @@ const res = client.query(sql, (err, res) => {
 });
 }
 
-getData('SELECT * FROM sample;');

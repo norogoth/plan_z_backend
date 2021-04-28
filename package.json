@@ -23,6 +23,7 @@
   "homepage": "https://github.com/norogoth/plan_z_backend#readme",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
     "node": "^15.14.0"
   }
 }
