@@ -1,20 +1,62 @@
 const http = require('http');
 require('dotenv').config();
-const expwessReq = require('express');
-const expwess = expwessReq();
 const {Client} = require('pg');
 const cors = require('cors');
 const port = 8000;
 
-expwess.get('/', (req, res) => {
-	res.send('Server is up and running');
-})
+/* EXPRESS */
+const expwessReq = require('express');
+const app = expwessReq();
+const session = require('express-session');
+app.set('view engine','ejs');
 
-expwess.listen(port, () => {
+app.use(session({
+	resave: false,
+	saveUnititialized: true,
+	secret: 'SECRET'
+}));
+
+app.get('/', function(req, res) {
+	res.render('pages/auth');
+});
+
+app.listen(port, () => {
 	console.log(`listening in at http://localhost:${port}`);
 })
 
-let data = null;
+/* PASSPORT SETUP */
+const passport = require("passport");
+let userProfile;
+app.use(passport.initialize());
+app.use(passport.session());
+app.set('view engine','ejs');
+app.get('/success', (req, res) => res.send(userProfile));
+app.get('/error', (req, res) => res.send('error logging in'));
+
+passport.serializeUser(function(user, cb) {
+	cb(null, user);
+});
+passport.deserializeUser(function(obj, cb) {
+	cb(null, obj);
+});
+
+/* Google Setup*/
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+passport.use(new GoogleStrategy({
+	clientID: process.env.CLIENT_ID,
+	clientSecret: process.env.CLIENT_SECRET,
+	callbackURL: 'http://localhost:8000/auth/google/callback'
+	},
+	function(accessToken, refreshToken, profile, done) {
+		userProfile=profile;
+		return done(null, userProfile);
+	}
+
+));
+
+
+app.use(cors());
+
 
 const config = {
 	host: 'localhost',
@@ -25,29 +67,35 @@ const config = {
 }
 
 const client = new Client(config);
-client.connect(err => {
+function clientConnect() {
+	client.connect(err => {
 	if (err) throw err;
-	else {
-		getData('SELECT * FROM sample;');
-	}
-});
+		else {
+			console.log('connected successfully.');
+		}
+	});
+}
 
-function getData(sql) {
-	client
+clientConnect();
+
+async function getData(sql) {
+	return client
 	.query(sql)
 	.then((res) => {
 		console.log('query ran. Result: ', res.rows);
-		client.end();
+		return res.rows;
 	})
 	.catch(err => console.log(err))
-	.then(() => {
-		console.log('finished execution.');
-		process.exit();
-	})
-const res = client.query(sql, (err, res) => {
-	if (err) throw err;
-	console.log(res);
-	client.end();
+};
+
+app.get('/test', async (req,res) => {
+	const data = await getData('SELECT id, name FROM sample WHERE id in (\'6\',\'7\');');
+	res.status(200).send(data);
 });
-}
+
+app.get('/data', async (req,res) => {
+	const data = await getData('SELECT * FROM sample;');
+	res.status(200).send(data);
+});
+/* EXPRESS */
 
