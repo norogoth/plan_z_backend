@@ -97,5 +97,14 @@ app.get('/data', async (req,res) => {
 	const data = await getData('SELECT * FROM sample;');
 	res.status(200).send(data);
 });
-/* EXPRESS */
+
+app.get('/auth/google',
+	passport.authenticate('google', {scope : ['profile', 'email'] }));
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/error' }),
+  function(req, res) {
+    // Successful authentication, redirect success.
+    res.redirect('/success');
+  });
 
