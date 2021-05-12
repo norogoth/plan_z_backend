@@ -2,11 +2,14 @@ const http = require('http');
 require('dotenv').config();
 const {Client} = require('pg');
 const cors = require('cors');
+const { OAuth2Client } = require('google-auth-library');
+const oAuthClient = new OAuth2Client(process.env.CLIENT_ID);
 const port = 8000;
 
 /* EXPRESS */
-const expwessReq = require('express');
-const app = expwessReq();
+const expwessWeq = require('express');
+const app = expwessWeq();
+const server = expwessWeq.Router()
 const session = require('express-session');
 app.set('view engine','ejs');
 
@@ -54,7 +57,6 @@ passport.use(new GoogleStrategy({
 
 ));
 
-
 app.use(cors());
 
 
@@ -78,7 +80,7 @@ function clientConnect() {
 
 clientConnect();
 
-async function getData(sql) {
+async function queryDb(sql) {
 	return client
 	.query(sql)
 	.then((res) => {
@@ -89,12 +91,12 @@ async function getData(sql) {
 };
 
 app.get('/test', async (req,res) => {
-	const data = await getData('SELECT id, name FROM sample WHERE id in (\'6\',\'7\');');
+	const data = await queryDb('SELECT id, name FROM sample WHERE id in (\'6\',\'7\');');
 	res.status(200).send(data);
 });
 
 app.get('/data', async (req,res) => {
-	const data = await getData('SELECT * FROM sample;');
+	const data = await queryDb('SELECT * FROM sample;');
 	res.status(200).send(data);
 });
 
@@ -107,4 +109,36 @@ app.get('/auth/google/callback',
     // Successful authentication, redirect success.
     res.redirect('/success');
   });
+
+//Setting up posting with OAut2
+server.post('/api/v1/auth/google', async (req, rest) => {
+	console.log('api/v1/auth/google was called');
+	const { token } = req.body
+
+	const ticket = await OAuthClient.verifyIdToken({
+		idToken: token,
+		audience: process.env.CLIENT_ID
+	});
+	const { name, email, picture } = ticket.getPayload();
+	
+	console.log('name: ',name,'\nemail: ',email,'\npicture: ',picture
+	);
+	const updateString = `INSERT INTO users (email, firstName, lastName) VALUES("${email}","${name}","${name}") ON CONFLICT DO NOTHING/UPDATE;`;
+	queryDb(updateString);
+
+	const user = await db.user.upsert({
+		where: {email: email },
+		update: {name, picture },
+		create: {name, email, picture }
+	})
+
+	res.status(201);
+	res.json(user)
+});
+
+
+
+
+
+
 
