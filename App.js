@@ -111,8 +111,10 @@ app.get('/auth/google/callback',
   });
 
 //Setting up posting with OAut2
-server.post('/api/v1/auth/google', async (req, rest) => {
+app.post('/api/v1/auth/google', async (req, res) => {
 	console.log('api/v1/auth/google was called');
+	res.end('Ok');
+/*
 	const { token } = req.body
 
 	const ticket = await OAuthClient.verifyIdToken({
@@ -134,6 +136,7 @@ server.post('/api/v1/auth/google', async (req, rest) => {
 
 	res.status(201);
 	res.json(user)
+*/
 });
 
 
