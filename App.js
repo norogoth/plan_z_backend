@@ -2,22 +2,22 @@ const http = require('http');
 require('dotenv').config();
 const {Client} = require('pg');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const { OAuth2Client } = require('google-auth-library');
 const oAuthClient = new OAuth2Client(process.env.CLIENT_ID);
 const port = 8000;
 
+
 /* EXPRESS */
-const expwessWeq = require('express');
-const app = expwessWeq();
-const server = expwessWeq.Router()
+const express = require('express');
+const app = express();
 const session = require('express-session');
 app.set('view engine','ejs');
 
-app.use(session({
-	resave: false,
-	saveUnititialized: true,
-	secret: 'SECRET'
-}));
+/* CORS stuff */
+app.use(cors({origin:'http://localhost:3000', credentials: true}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }))
 
 app.get('/', function(req, res) {
 	res.render('pages/auth');
@@ -113,11 +113,11 @@ app.get('/auth/google/callback',
 //Setting up posting with OAut2
 app.post('/api/v1/auth/google', async (req, res) => {
 	console.log('api/v1/auth/google was called');
-	res.end('Ok');
-/*
+	console.log('req: ',req);
+	console.log('req.body: ',req.body);
 	const { token } = req.body
 
-	const ticket = await OAuthClient.verifyIdToken({
+	const ticket = await oAuthClient.verifyIdToken({
 		idToken: token,
 		audience: process.env.CLIENT_ID
 	});
@@ -128,6 +128,8 @@ app.post('/api/v1/auth/google', async (req, res) => {
 	const updateString = `INSERT INTO users (email, firstName, lastName) VALUES("${email}","${name}","${name}") ON CONFLICT DO NOTHING/UPDATE;`;
 	queryDb(updateString);
 
+	const user = await queryDb('SELECT * FROM users;');
+
 	const user = await db.user.upsert({
 		where: {email: email },
 		update: {name, picture },
@@ -136,12 +138,6 @@ app.post('/api/v1/auth/google', async (req, res) => {
 
 	res.status(201);
 	res.json(user)
-*/
+	res.end('Ok');
 });
-
-
-
-
-
-
 
