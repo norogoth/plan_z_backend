@@ -2,6 +2,7 @@ const http = require('http');
 require('dotenv').config();
 const {Client} = require('pg');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const { OAuth2Client } = require('google-auth-library');
 const oAuthClient = new OAuth2Client(process.env.CLIENT_ID);
@@ -56,9 +57,6 @@ passport.use(new GoogleStrategy({
 	}
 
 ));
-
-app.use(cors());
-
 
 const config = {
 	host: 'localhost',
@@ -121,23 +119,32 @@ app.post('/api/v1/auth/google', async (req, res) => {
 		idToken: token,
 		audience: process.env.CLIENT_ID
 	});
-	const { name, email, picture } = ticket.getPayload();
+	const { sub, name, email, picture } = ticket.getPayload();
 	
-	console.log('name: ',name,'\nemail: ',email,'\npicture: ',picture
-	);
-	const updateString = `INSERT INTO users (email, firstName, lastName) VALUES("${email}","${name}","${name}") ON CONFLICT DO NOTHING/UPDATE;`;
+	nameArray = name.split(' ');
+	firstName = nameArray[0];
+	lastName = nameArray[1];
+
+	//console.log('name: ',name,'\nemail: ',email,'\npicture: ',picture,'sub: ',sub);
+	const updateString = `INSERT INTO users (googleid, email, firstName, lastName) VALUES('${sub}','${email}','${firstName}','${lastName}') ON CONFLICT DO NOTHING;`;
 	queryDb(updateString);
-
-	const user = await queryDb('SELECT * FROM users;');
-
-	const user = await db.user.upsert({
-		where: {email: email },
-		update: {name, picture },
-		create: {name, email, picture }
-	})
-
+	
 	res.status(201);
-	res.json(user)
-	res.end('Ok');
+	const myJson = {
+		'token': token
+	}
+	const myData = {
+		'id': sub,
+		'name': name,
+		'email': email,
+		'picture': picture,
+	}
+	const myJwt = jwt.sign(myJson, process.env.JWT_SECRET);
+	console.log(myJson);
+	res.cookie('jwt', myJwt, {
+		domain: 'localhost:3000',
+		httpOnly: true
+	});
+	res.json(myData);
+	res.send();
 });
-
