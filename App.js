@@ -2,22 +2,23 @@ const http = require('http');
 require('dotenv').config();
 const {Client} = require('pg');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
 const { OAuth2Client } = require('google-auth-library');
 const oAuthClient = new OAuth2Client(process.env.CLIENT_ID);
 const port = 8000;
 
+
 /* EXPRESS */
-const expwessWeq = require('express');
-const app = expwessWeq();
-const server = expwessWeq.Router()
+const express = require('express');
+const app = express();
 const session = require('express-session');
 app.set('view engine','ejs');
 
-app.use(session({
-	resave: false,
-	saveUnititialized: true,
-	secret: 'SECRET'
-}));
+/* CORS stuff */
+app.use(cors({origin:'http://localhost:3000', credentials: true}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }))
 
 app.get('/', function(req, res) {
 	res.render('pages/auth');
@@ -56,9 +57,6 @@ passport.use(new GoogleStrategy({
 	}
 
 ));
-
-app.use(cors());
-
 
 const config = {
 	host: 'localhost',
@@ -111,34 +109,42 @@ app.get('/auth/google/callback',
   });
 
 //Setting up posting with OAut2
-server.post('/api/v1/auth/google', async (req, rest) => {
+app.post('/api/v1/auth/google', async (req, res) => {
 	console.log('api/v1/auth/google was called');
+	console.log('req: ',req);
+	console.log('req.body: ',req.body);
 	const { token } = req.body
 
-	const ticket = await OAuthClient.verifyIdToken({
+	const ticket = await oAuthClient.verifyIdToken({
 		idToken: token,
 		audience: process.env.CLIENT_ID
 	});
-	const { name, email, picture } = ticket.getPayload();
+	const { sub, name, email, picture } = ticket.getPayload();
 	
-	console.log('name: ',name,'\nemail: ',email,'\npicture: ',picture
-	);
-	const updateString = `INSERT INTO users (email, firstName, lastName) VALUES("${email}","${name}","${name}") ON CONFLICT DO NOTHING/UPDATE;`;
-	queryDb(updateString);
+	nameArray = name.split(' ');
+	firstName = nameArray[0];
+	lastName = nameArray[1];
 
-	const user = await db.user.upsert({
-		where: {email: email },
-		update: {name, picture },
-		create: {name, email, picture }
-	})
-
+	//console.log('name: ',name,'\nemail: ',email,'\npicture: ',picture,'sub: ',sub);
+	const updateString = `INSERT INTO users (googleid, email, firstName, lastName) VALUES('${sub}','${email}','${firstName}','${lastName}') ON CONFLICT DO NOTHING;`;
+	await queryDb(updateString);
+	
 	res.status(201);
-	res.json(user)
+	const tokenJson = {
+		'token': token
+	}
+	const myData = {
+		'id': sub,
+		'name': name,
+		'email': email,
+		'picture': picture,
+	}
+	const myJwt = jwt.sign(tokenJson, process.env.JWT_SECRET);
+	console.log(tokenJson);
+	res.cookie('jwt', myJwt, {
+		domain: 'localhost:3000',
+		httpOnly: true
+	});
+	res.json(myData);
+	res.send();
 });
-
-
-
-
-
-
-
