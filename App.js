@@ -127,10 +127,10 @@ app.post('/api/v1/auth/google', async (req, res) => {
 
 	//console.log('name: ',name,'\nemail: ',email,'\npicture: ',picture,'sub: ',sub);
 	const updateString = `INSERT INTO users (googleid, email, firstName, lastName) VALUES('${sub}','${email}','${firstName}','${lastName}') ON CONFLICT DO NOTHING;`;
-	queryDb(updateString);
+	await queryDb(updateString);
 	
 	res.status(201);
-	const myJson = {
+	const tokenJson = {
 		'token': token
 	}
 	const myData = {
@@ -139,8 +139,8 @@ app.post('/api/v1/auth/google', async (req, res) => {
 		'email': email,
 		'picture': picture,
 	}
-	const myJwt = jwt.sign(myJson, process.env.JWT_SECRET);
-	console.log(myJson);
+	const myJwt = jwt.sign(tokenJson, process.env.JWT_SECRET);
+	console.log(tokenJson);
 	res.cookie('jwt', myJwt, {
 		domain: 'localhost:3000',
 		httpOnly: true
